@@ -1,0 +1,84 @@
+<html>
+  <head>
+    <style></style>
+    <script src="https://d3js.org/d3.v5.min.js" defer></script>
+  </head>
+  <body>
+    <p>SVG Illustrator Test</p>
+    <input type="file" id="upload" style="margin: 10px" />
+    <button
+      id="copy-to-clipboard"
+      onclick="copyToClipboard()"
+      style="
+        display: none;
+        margin: 10px;
+        background-color: rgb(255, 255, 255);
+        padding-top: 6px;
+        padding-bottom: 6px;
+      "
+    >
+      Copy Data
+    </button>
+    <p id="output"></p>
+  </body>
+  <script>
+    let globalJSON = [];
+    const copyToClipboard = () => {
+      navigator.clipboard.writeText(JSON.stringify(globalJSON));
+    };
+    function displayArrayObjects(arrayObjects) {
+      var len = arrayObjects.length,
+        text = "";
+      text += "[";
+      for (var i = 0; i < len; i++) {
+        var myObject = arrayObjects[i];
+        text += "{<br/>";
+        for (var x in myObject) {
+          text += x + ": " + myObject[x] + "<br/> ";
+        }
+        text += "},<br/>";
+      }
+      text += "]";
+      document.getElementById("output").innerHTML = text;
+    }
+    let getJson = async (objectValue) => {
+      try {
+        let JSONItem = {};
+        let attributesCount = objectValue.attributes;
+        let n = attributesCount.length;
+        JSONItem["tagType"] = objectValue.localName;
+        for (let i = 0; i < n; i++) {
+          let attributeName = attributesCount[i].nodeName;
+          JSONItem[attributeName] = attributesCount[i].nodeValue;
+        }
+        globalJSON.push(JSONItem);
+      } catch (err) {
+        console.log(err);
+      }
+    };
+    upload.onchange = async (e) => {
+      try {
+        let file = upload.files[0];
+        console.log(file.name);
+        if (file.type === "image/svg+xml") {
+          d3.xml(URL.createObjectURL(file)).then((data) => {
+            // Adding attributes of svg tag
+            let svg = data.documentElement; 
+            getJson(svg);
+            // creating json for rest of the svg element
+            let element_arr = data.documentElement.getElementsByTagName("*"); 
+            for (let i = 0; i < element_arr.length; i++) { 
+                getJson(element_arr[i]);
+            } 
+            console.log(globalJSON);
+            document.getElementById("copy-to-clipboard").style.display =
+              "block";
+            displayArrayObjects(globalJSON);
+          });
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    };
+  </script>
+</html>
